@@ -30,7 +30,9 @@ const THRESHOLD_TIME = process.env.THRESHOLD_TIME ? Number(process.env.THRESHOLD
 
 // Cron time for this script
 const TRIGGER_INTERVAL = process.env.TRIGGER_INTERVAL ? Number(process.env.TRIGGER_INTERVAL) : THRESHOLD_TIME
-// How many data points to fix an alarm
+// How many run points to trigger err
+const TRIGGER_ERR_POINTS = process.env.TRIGGER_ERR_POINTS ? Number(process.env.TRIGGER_ERR_POINTS) : 1
+// How many run points to fix an alarm
 const TRIGGER_FIX_POINTS = process.env.TRIGGER_FIX_POINTS ? Number(process.env.TRIGGER_FIX_POINTS) : 3
 
 const SLACK_ENABLED = Boolean(process.env.SLACK_ENABLED ? Number(process.env.SLACK_ENABLED) : 1)
@@ -173,12 +175,12 @@ function requestChartData (region, id, startTime, endTime, skipAlarms = false, t
         if (possibleAlarms.length) {
           let alarm = possibleAlarms.slice(-1)[0]
           let lastDataPointTS = moment(new Date(data.Datapoints.slice(-1)[0].Timestamp).getTime())
-          let runTimesToEnd = Number((lastDataPointTS.diff(alarm.endedAt, 'minutes') / triggerInterval).toFixed())
+          let runTimesToEnd = Number((lastDataPointTS.diff(alarm.endedAt, 'minutes') / triggerInterval).toFixed()) - 1
 
           // console.log(alarm, lastDataPointTS, moment(lastDataPointTS).diff(moment(alarm.endedAt), 'minutes'), triggerInterval, runTimesToEnd, data.Datapoints.slice(-1)[0])
 
           switch (Number(Number(runTimesToEnd).toFixed())) {
-            case 1: // Error Alarm
+            case TRIGGER_ERR_POINTS: // Error Alarm
               renderAlarmChart(id, region, alarm, startTime, endTime)
               .then(chartFileName => {
                 console.log(`${chartFileName} created`)
